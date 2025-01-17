@@ -1,9 +1,59 @@
 import pytest
 import requests
 import config
-import data
 from helpers import generate_random_email, generate_random_password, generate_random_name
-from methods.create_user import CreateUser
+
+@pytest.fixture
+def create_registered_user():
+    url = f"{config.REGISTRATION_URL}"
+    name = generate_random_name()
+    email = generate_random_email()
+    password = generate_random_password()
+
+    user_data = {
+        "email": email,
+        "password": password,
+        "name": name
+    }
+
+    response = requests.post(url, json=user_data)
+    response_data = response.json()
+    access_token = response_data.get("accessToken")
+
+    if not access_token:
+        raise ValueError(f"User registration failed, no accessToken returned. Response: {response.text}")
+
+    yield {
+        "user_data": user_data,
+        "accessToken": access_token,
+        "status_code": response.status_code
+    }
+
+    delete_url = f"{config.DELETE_USER_URL}"
+    headers = {"Authorization": access_token}
+    requests.delete(delete_url, headers=headers)
+
+@pytest.fixture
+def login_user(create_registered_user):
+    user_data = create_registered_user['user_data']
+    email = user_data['email']
+    password = user_data['password']
+
+    login_url = config.LOGIN_URL
+    login_payload = {
+        "email": email,
+        "password": password
+    }
+    login_response = requests.post(login_url, json=login_payload)
+
+    print(f"Login response: {login_response.status_code}, {login_response.text}")
+
+    assert login_response.status_code in [200, 201], f"Login failed: {login_response.text}"
+
+    token = login_response.json().get('accessToken')
+    refresh_token = login_response.json().get('refreshToken')
+
+    return token, refresh_token, email
 
 @pytest.fixture()
 def create_user_return_token():
@@ -30,46 +80,3 @@ def create_user_return_token():
     yield token
 
     requests.delete(f'{config.CHANGE_DATA_URL}', headers={'Authorization': token})
-
-
-@pytest.fixture()
-def create_user():
-    response = requests.post(f'{config.REGISTRATION_URL}', json=data.DATA_USER)
-
-    if response.status_code not in [200, 201]:
-        pytest.fail(f"User creation failed: {response.status_code} - {response.text}")
-
-    token = response.json().get('accessToken')
-    if not token:
-        pytest.fail(f"'accessToken' not found in response: {response.json()}")
-
-    yield response
-    requests.delete(f'{config.CHANGE_DATA_URL}', headers={'Authorization': token})
-
-@pytest.fixture
-def login_user():
-    email = generate_random_email()
-    password = generate_random_password()
-    name = generate_random_name()
-
-    create_response = CreateUser.create_user(email, password, name)
-
-    print(f"Create user response: {create_response.status_code}, {create_response.text}")
-
-    assert create_response.status_code in [200, 201], f"User creation failed: {create_response.text}"
-
-    login_url = config.LOGIN_URL
-    login_payload = {
-        "email": email,
-        "password": password
-    }
-    login_response = requests.post(login_url, json=login_payload)
-
-    print(f"Login response: {login_response.status_code}, {login_response.text}")
-
-    assert login_response.status_code in [200, 201], f"Login failed: {login_response.text}"
-
-    token = login_response.json().get('accessToken')
-    refresh_token = login_response.json().get('refreshToken')
-
-    return token, refresh_token, email

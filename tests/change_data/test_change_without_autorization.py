@@ -10,4 +10,5 @@ def test_update_user_not_auth(auth_data):
     response = user_methods.update_data_user_not_auth(auth_data)
     response_body = response.json()
 
-    assert (response.status_code == 401 and response_body.get("success") is False)
+    assert response.status_code == 401, f"Статус-код ответа не равен 401, пришел {response.status_code}"
+    assert response_body.get("success") is False, "Поле 'success' в ответе не равно False"

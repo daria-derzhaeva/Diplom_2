@@ -1,15 +1,13 @@
-from helpers import generate_random_email, generate_random_password, generate_random_name
-from methods.create_user import CreateUser
 import allure
 
-@allure.title('Проверяем создание уникального пользователя')
-def test_create_unique_user():
-    email = generate_random_email()
-    password = generate_random_password()
-    name = generate_random_name()
+class TestCreateUser:
+    @allure.title('Проверяем создание и удаление уникального пользователя')
+    def test_create_unique_user(self, create_registered_user):
+        user_data = create_registered_user['user_data']
+        access_token = create_registered_user['accessToken']
+        status_code = create_registered_user['status_code']
 
-    response = CreateUser.create_user(email, password, name)
-
-    assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-    response_data = response.json()
-    assert response_data.get("success") is True, "User creation was not successful"
+        assert status_code == 200, f"Expected status code 200 for successful registration, but got {status_code}"
+        assert access_token is not None, "Expected accessToken for successful registration"
+        assert user_data['email'] is not None, "Email should be present in the user data"
+        assert user_data['name'] is not None, "Name should be present in the user data"

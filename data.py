@@ -25,3 +25,5 @@ UPDATE_DATA_USER_NOT_AUTH = [
     {'email': 'test-test@gmail.com', 'name': 'Дарья'},
     {'email': 'testdata@gmail.com', 'name': 'Дарья'},
 ]
+
+EXPECTED_ERROR_TEXT = "Internal Server Error"

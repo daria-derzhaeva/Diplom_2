@@ -11,4 +11,5 @@ def test_update_user_auth(auth_data, create_user_return_token):
     response = user_methods.update_data_user_auth(auth_data, token)
     response_body = response.json()
 
-    assert (response.status_code == 200 and response_body.get("success") is True)
+    assert response.status_code == 200, f"Статус-код ответа не равен 200, пришел {response.status_code}"
+    assert response_body.get("success") is True, "Поле 'success' в ответе не равно True"
